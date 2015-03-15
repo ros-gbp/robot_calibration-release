@@ -1,6 +1,10 @@
 cmake_minimum_required(VERSION 2.8.3)
 project(robot_calibration)
 
+if (CMAKE_COMPILER_IS_GNUCC OR CMAKE_COMPILER_IS_GNUCXX)
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall")
+endif()
+
 find_package(Boost REQUIRED system thread)
 find_package(PCL REQUIRED)
 find_package(OpenCV REQUIRED)  # visualization only
@@ -24,6 +28,7 @@ find_package(catkin REQUIRED
     cv_bridge
     geometry_msgs
     kdl_parser
+    moveit_msgs
     nav_msgs
     pcl_ros
     robot_calibration_msgs
@@ -33,7 +38,30 @@ find_package(catkin REQUIRED
     std_msgs
 )
 
-catkin_package()
+catkin_package(
+  INCLUDE_DIRS
+    include
+  CATKIN_DEPENDS
+    actionlib
+    camera_calibration_parsers
+    cv_bridge
+    geometry_msgs
+    kdl_parser
+    moveit_msgs
+    nav_msgs
+    pcl_ros
+    robot_calibration_msgs
+    rosbag
+    roscpp
+    sensor_msgs
+    std_msgs
+  DEPENDS
+    Boost
+    Ceres
+    orocos_kdl
+  LIBRARIES
+    robot_calibration
+)
 
 include_directories(include ${Boost_INCLUDE_DIRS}
                             ${catkin_INCLUDE_DIRS}
@@ -73,5 +101,9 @@ add_dependencies(calibrate robot_calibration)
 
 add_subdirectory(test)
 
-install(TARGETS calibrate calibrate_base
-        DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION})
+install(DIRECTORY include/ DESTINATION include)
+
+install(TARGETS calibrate calibrate_base robot_calibration
+  ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+  LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+  RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION})

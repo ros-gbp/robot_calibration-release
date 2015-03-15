@@ -71,7 +71,7 @@
  */
 int main(int argc, char** argv)
 {
-  ros::init(argc, argv,"calibration_node");
+  ros::init(argc, argv,"robot_calibration");
   ros::NodeHandle nh("~");
 
   // Should we be stupidly verbose?
@@ -92,10 +92,14 @@ int main(int argc, char** argv)
     // no name provided for a calibration bag file, must do capture
     robot_calibration::ChainManager chain_manager_(nh);
     robot_calibration::FeatureFinder * finder_;
-    if (nh.hasParam("use_led_finder"))
+    if (nh.hasParam("led_finder"))
+    {
       finder_ = new robot_calibration::LedFinder(nh);
+    }
     else
+    {
       finder_ = new robot_calibration::CheckerboardFinder(nh);
+    }
 
     ros::Publisher pub = nh.advertise<robot_calibration_msgs::CalibrationData>("/calibration_data", 10);
     ros::Publisher urdf_pub = nh.advertise<std_msgs::String>("/robot_description", 1, true);  // latched
@@ -117,8 +121,7 @@ int main(int argc, char** argv)
     std::vector<sensor_msgs::JointState> poses;
     if (pose_bag_name.compare("--manual") != 0)
     {
-      if (verbose)
-        ROS_INFO_STREAM("Opening " << pose_bag_name);
+      ROS_INFO_STREAM("Opening " << pose_bag_name);
       rosbag::Bag bag;
       try
       {
@@ -150,7 +153,7 @@ int main(int argc, char** argv)
       if (poses.size() == 0)
       {
         // Manual calibration, wait for keypress
-        ROS_INFO("Press key when arm is ready...");
+        ROS_INFO("Press key when arm is ready... (type 'done' to finish capture)");
         std::string throwaway;
         std::getline(std::cin, throwaway);
         if (throwaway.compare("done") == 0)
