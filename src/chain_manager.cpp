@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014 Fetch Robotics Inc.
+ * Copyright (C) 2014-2015 Fetch Robotics Inc.
  * Copyright (C) 2013-2014 Unbounded Robotics Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -36,37 +36,87 @@ ChainManager::ChainManager(ros::NodeHandle& nh, double wait_time)
   ROS_ASSERT(chains.getType() == XmlRpc::XmlRpcValue::TypeArray);
 
   // Construct each chain to manage
-  for (size_t i = 0; i < chains.size(); ++i)
+  for (int i = 0; i < chains.size(); ++i)
   {
-    std::string name, topic;
+    std::string name, topic, group;
     name = static_cast<std::string>(chains[i]["name"]);
     topic = static_cast<std::string>(chains[i]["topic"]);
+    group = static_cast<std::string>(chains[i]["planning_group"]);
 
-    boost::shared_ptr<ChainController> controller(new ChainController(name, topic));
+    boost::shared_ptr<ChainController> controller(new ChainController(name, topic, group));
 
-    for (size_t j = 0; j < chains[i]["joints"].size(); ++j)
+    for (int j = 0; j < chains[i]["joints"].size(); ++j)
     {
       controller->joint_names.push_back(static_cast<std::string>(chains[i]["joints"][j]));
     }
 
     ROS_INFO("Waiting for %s...", topic.c_str());
-    controller->client.waitForServer(ros::Duration(wait_time));
+    if (!controller->client.waitForServer(ros::Duration(wait_time)))
+    {
+      ROS_WARN("Failed to connect to %s", topic.c_str());
+    }
+
+    if (controller->shouldPlan() && (!move_group_))
+    {
+      move_group_.reset(new MoveGroupClient("move_group", true));
+      if (!move_group_->waitForServer(ros::Duration(wait_time)))
+      {
+        ROS_WARN("Failed to connect to move_group");
+      }
+    }
 
     controllers_.push_back(controller);
   }
 
+  // Parameter to set movement time
+  nh.param<double>("duration", duration_, 5.0);
+
   subscriber_ = nh.subscribe("/joint_states", 1, &ChainManager::stateCallback, this);
 }
 
-// TODO: need mutex here?
 void ChainManager::stateCallback(const sensor_msgs::JointStateConstPtr& msg)
 {
-  state_ = *msg;
+  if (msg->name.size() != msg->position.size())
+  {
+    ROS_ERROR("JointState Error: name array is not same size as position array.");
+    return;
+  }
+
+  if (msg->position.size() != msg->velocity.size())
+  {
+    ROS_ERROR("JointState Error: position array is not same size as velocity array.");
+    return;
+  }
+
+  boost::mutex::scoped_lock lock(state_mutex_);
+  // Update each joint based on message
+  for (size_t msg_j = 0; msg_j < msg->name.size(); msg_j++)
+  {
+    size_t state_j;
+    for (state_j = 0; state_j < state_.name.size(); state_j++)
+    {
+      if (state_.name[state_j] == msg->name[msg_j])
+      {
+        state_.position[state_j] = msg->position[msg_j];
+        state_.velocity[state_j] = msg->velocity[msg_j];
+        break;
+      }
+    }
+    if (state_j == state_.name.size())
+    {
+      // New joint
+      state_.name.push_back(msg->name[msg_j]);
+      state_.position.push_back(msg->position[msg_j]);
+      state_.velocity.push_back(msg->velocity[msg_j]);
+    }
+  }
 }
 
 bool ChainManager::getState(sensor_msgs::JointState* state)
 {
+  boost::mutex::scoped_lock lock(state_mutex_);
   *state = state_;
+  return true;  // TODO: this should actually return whether state is valid
 }
 
 trajectory_msgs::JointTrajectoryPoint
@@ -76,11 +126,13 @@ ChainManager::makePoint(const sensor_msgs::JointState& state, const std::vector<
   for (size_t i = 0; i < joints.size(); ++i)
   {
     for (size_t j = 0; j < state.name.size(); ++j)
+    {
       if (joints[i] == state.name[j])
       {
         p.positions.push_back(state.position[j]);
         break;
       }
+    }
     p.velocities.push_back(0.0);
     p.accelerations.push_back(0.0);
     if (p.velocities.size() != p.positions.size())
@@ -94,6 +146,8 @@ ChainManager::makePoint(const sensor_msgs::JointState& state, const std::vector<
 
 bool ChainManager::moveToState(const sensor_msgs::JointState& state)
 {
+  double max_duration = duration_;
+
   // Split into different controllers
   for(size_t i = 0; i < controllers_.size(); ++i)
   {
@@ -101,9 +155,54 @@ bool ChainManager::moveToState(const sensor_msgs::JointState& state)
     goal.trajectory.joint_names = controllers_[i]->joint_names;
 
     trajectory_msgs::JointTrajectoryPoint p = makePoint(state, controllers_[i]->joint_names);
-    p.time_from_start = ros::Duration(1.0);
-    goal.trajectory.points.push_back(p);
-    goal.goal_time_tolerance = ros::Duration(3.0);
+    if (controllers_[i]->shouldPlan())
+    {
+      // Call MoveIt
+      moveit_msgs::MoveGroupGoal moveit_goal;
+      moveit_goal.request.group_name = controllers_[i]->chain_planning_group;
+      moveit_goal.request.num_planning_attempts = 1;
+      moveit_goal.request.allowed_planning_time = 5.0;
+
+      moveit_msgs::Constraints c1;
+      c1.joint_constraints.resize(controllers_[i]->joint_names.size());
+      for (size_t c = 0; c < controllers_[i]->joint_names.size(); c++)
+      {
+        c1.joint_constraints[c].joint_name = controllers_[i]->joint_names[c];
+        c1.joint_constraints[c].position = p.positions[c];
+        c1.joint_constraints[c].tolerance_above = 0.01;
+        c1.joint_constraints[c].tolerance_below = 0.01;
+        c1.joint_constraints[c].weight = 1.0;
+      }
+      moveit_goal.request.goal_constraints.push_back(c1);
+
+      // All diffs
+      moveit_goal.request.start_state.is_diff = true;
+      moveit_goal.planning_options.planning_scene_diff.is_diff = true;
+      moveit_goal.planning_options.planning_scene_diff.robot_state.is_diff = true;
+
+      // Just make the plan, we will execute it
+      moveit_goal.planning_options.plan_only = true;
+
+      move_group_->sendGoal(moveit_goal);
+      move_group_->waitForResult();
+      MoveGroupResultPtr result = move_group_->getResult();
+      if (result->error_code.val != moveit_msgs::MoveItErrorCodes::SUCCESS)
+      {
+        // Unable to plan, return error
+        return false;
+      }
+
+      goal.trajectory = result->planned_trajectory.joint_trajectory;
+      max_duration = std::max(max_duration, goal.trajectory.points[goal.trajectory.points.size()-1].time_from_start.toSec());
+    }
+    else
+    {
+      // Go directly to point
+      p.time_from_start = ros::Duration(duration_);
+      goal.trajectory.points.push_back(p);
+    }
+
+    goal.goal_time_tolerance = ros::Duration(1.0);
 
     // Call actions
     controllers_[i]->client.sendGoal(goal);
@@ -112,8 +211,8 @@ bool ChainManager::moveToState(const sensor_msgs::JointState& state)
   // Wait for results
   for (size_t i = 0; i < controllers_.size(); ++i)
   {
+    controllers_[i]->client.waitForResult(ros::Duration(max_duration*1.5));
     // TODO: catch errors with clients
-    controllers_[i]->client.waitForResult(ros::Duration(15.0));
   }
 
   return true;
@@ -122,7 +221,6 @@ bool ChainManager::moveToState(const sensor_msgs::JointState& state)
 bool ChainManager::waitToSettle()
 {
   sensor_msgs::JointState state;
-  int stable = 0;
 
   // TODO: timeout?
   while (true)
@@ -149,7 +247,7 @@ bool ChainManager::waitToSettle()
         }
       }
 
-      // If at least one joint is not settled, break out this for loop
+      // If at least one joint is not settled, break out of this for loop
       if (!settled)
         break;
     }
@@ -167,7 +265,7 @@ bool ChainManager::waitToSettle()
 std::vector<std::string> ChainManager::getChains()
 {
   std::vector<std::string> chains;
-  for (int i = 0; i < controllers_.size(); ++i)
+  for (size_t i = 0; i < controllers_.size(); ++i)
   {
     chains.push_back(controllers_[i]->chain_name);
   }
@@ -177,13 +275,25 @@ std::vector<std::string> ChainManager::getChains()
 std::vector<std::string> ChainManager::getChainJointNames(
   const std::string& chain_name)
 {
-  for (int i = 0; i < controllers_.size(); ++i)
+  for (size_t i = 0; i < controllers_.size(); ++i)
   {
     if (controllers_[i]->chain_name == chain_name)
       return controllers_[i]->joint_names;
   }
   std::vector<std::string> empty;
   return empty;
+}
+
+std::string ChainManager::getPlanningGroupName(
+  const std::string& chain_name)
+{
+  for (size_t i = 0; i < controllers_.size(); ++i)
+  {
+    if (controllers_[i]->chain_name == chain_name)
+      return controllers_[i]->chain_planning_group;
+  }
+  std::vector<std::string> empty;
+  return std::string("");
 }
 
 }  // namespace robot_calibration
