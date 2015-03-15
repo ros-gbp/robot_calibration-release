@@ -1,8 +1,0 @@
-ros-indigo-robot-calibration-msgs (0.1.1-0saucy) saucy; urgency=high
-
-  * split out messages into separate package
-  * Contributors: Michael Ferguson
-
- -- Michael Ferguson <mfergs7@gmail.com>  Thu, 05 Mar 2015 08:00:00 -0000
-
-
