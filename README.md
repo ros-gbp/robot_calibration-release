@@ -1,3 +1,26 @@
+## robot_calibration (indigo) - 0.2.0-0
+
+The packages in the `robot_calibration` repository were released into the `indigo` distro by running `/usr/bin/bloom-release -r indigo -t indigo robot_calibration` on `Mon, 16 Mar 2015 19:05:36 -0000`
+
+These packages were released:
+- `robot_calibration`
+- `robot_calibration_msgs`
+
+Version of package(s) in repository `robot_calibration`:
+- upstream repository: https://github.com/mikeferguson/robot_calibration.git
+- release repository: https://github.com/fetchrobotics-gbp/robot_calibration-release.git
+- rosdistro version: `0.1.2-0`
+- old version: `0.1.2-0`
+- new version: `0.2.0-0`
+
+Versions of tools used:
+- bloom version: `0.5.19`
+- catkin_pkg version: `0.2.6`
+- rosdep version: `0.11.0`
+- rosdistro version: `0.4.0`
+- vcstools version: `0.1.36`
+
+
 ## robot_calibration (indigo) - 0.1.2-0
 
 The packages in the `robot_calibration` repository were released into the `indigo` distro by running `/usr/bin/bloom-release -r indigo -t indigo robot_calibration` on `Sun, 15 Mar 2015 09:12:24 -0000`
