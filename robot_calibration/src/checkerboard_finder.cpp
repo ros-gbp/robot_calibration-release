@@ -36,8 +36,12 @@ CheckerboardFinder::CheckerboardFinder(ros::NodeHandle & n) :
                             &CheckerboardFinder::cameraCallback,
                             this);
 
+  // Size of checkerboard
   nh.param<int>("points_x", points_x_, 4);
   nh.param<int>("points_y", points_y_, 5);
+
+  // Should we output debug image/cloud
+  nh.param<bool>("debug", output_debug_, false);
 }
 
 void CheckerboardFinder::cameraCallback(const pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud)
@@ -111,8 +115,11 @@ bool CheckerboardFinder::findInternal(robot_calibration_msgs::CalibrationData * 
     ROS_INFO("Found the checkboard");
 
     // Set msg size
-    msg->rgbd_observations.resize(points_x_ * points_y_);
-    msg->world_observations.resize(points_x_ * points_y_);
+    msg->observations.resize(2);
+    msg->observations[0].sensor_name = "camera";  // TODO: parameterize
+    msg->observations[0].features.resize(points_x_ * points_y_);
+    msg->observations[1].sensor_name = "arm";     // TODO: parameterize
+    msg->observations[1].features.resize(points_x_ * points_y_);
 
     // Fill in the headers
     rgbd.header.seq = cloud_ptr_->header.seq;
@@ -142,10 +149,15 @@ bool CheckerboardFinder::findInternal(robot_calibration_msgs::CalibrationData * 
         return false;
       }
 
-      msg->rgbd_observations[i] = rgbd;
-      msg->world_observations[i] = world;
+      msg->observations[0].features[i] = rgbd;
+      msg->observations[1].features[i] = world;
     }
-    pcl::toROSMsg(*cloud_ptr_, msg->cloud);
+
+    // Add debug cloud to message
+    if (output_debug_)
+    {
+      pcl::toROSMsg(*cloud_ptr_, msg->observations[0].cloud);
+    }
 
     // Found all points
     return true;
