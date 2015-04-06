@@ -2,6 +2,9 @@
 Changelog for package robot_calibration_msgs
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+0.2.1 (2015-04-05)
+------------------
+
 0.2.0 (2015-03-16)
 ------------------
 * extend messages to support multiple sensors
