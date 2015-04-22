@@ -145,8 +145,14 @@ int main(int argc, char** argv)
       ROS_INFO("Using manual calibration mode...");
     }
 
+    // All ROS callbacks are processed in a separate thread
+    ros::AsyncSpinner spinner(1);
+    spinner.start();
+
     // For each pose in the capture sequence.
-    for (unsigned int pose_idx = 0; (pose_idx < poses.size()) || (poses.size() == 0); ++pose_idx)
+    for (unsigned pose_idx = 0;
+         (pose_idx < poses.size() || poses.size() == 0) && ros::ok();
+         ++pose_idx)
     {
       robot_calibration_msgs::CalibrationData msg;
 
@@ -164,7 +170,11 @@ int main(int argc, char** argv)
       else
       {
         // Move head/arm to pose
-        chain_manager_.moveToState(poses[pose_idx]);
+        if (!chain_manager_.moveToState(poses[pose_idx]))
+        {
+          ROS_WARN("Unable to move to desired state for sample %u.", pose_idx);
+          continue;
+        }
       }
 
       // Regardless of manual vs. automatic, wait for joints to settle
