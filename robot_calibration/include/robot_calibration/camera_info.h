@@ -17,13 +17,11 @@
 
 // Author: Michael Ferguson
 
-#ifndef ROBOT_CALIBRATION_DEPTH_CAMERA_H
-#define ROBOT_CALIBRATION_DEPTH_CAMERA_H
+#ifndef ROBOT_CALIBRATION_CAMERA_INFO_H
+#define ROBOT_CALIBRATION_CAMERA_INFO_H
 
 #include <ros/ros.h>
 #include <sensor_msgs/CameraInfo.h>
-#include <robot_calibration_msgs/CalibrationData.h>
-#include <robot_calibration_msgs/ExtendedCameraInfo.h>
 
 namespace robot_calibration
 {
@@ -65,74 +63,6 @@ inline sensor_msgs::CameraInfo updateCameraInfo(double camera_fx, double camera_
   return new_info;
 }
 
-/** @brief Base class for a feature finder. */
-class DepthCameraInfoManager
-{
-public:
-  DepthCameraInfoManager() : camera_info_valid_(false) {}
-  virtual ~DepthCameraInfoManager() {}
-
-  bool init(ros::NodeHandle& n)
-  {
-    camera_info_subscriber_ = n.subscribe("/head_camera/depth/camera_info",
-                                          1,
-                                          &DepthCameraInfoManager::cameraInfoCallback,
-                                          this);
-
-    // Get parameters of drivers
-    if (!n.getParam("/head_camera/driver/z_offset_mm", z_offset_mm_) ||
-        !n.getParam("/head_camera/driver/z_scaling", z_scaling_))
-    {
-      ROS_FATAL("/head_camera/driver is not set, are drivers running?");
-      return false;
-    }
-
-    // TODO: should we warn about any particular configurations of offset/scaling?
-
-    // Wait for camera_info
-    int count = 25;
-    while (--count)
-    {
-      if (camera_info_valid_)
-      {
-        return true;
-      }
-      ros::Duration(0.1).sleep();
-      ros::spinOnce();
-    }
-
-    ROS_WARN("CameraInfo receive timed out.");
-    return false;
-  }
-
-  robot_calibration_msgs::ExtendedCameraInfo getDepthCameraInfo()
-  {
-    robot_calibration_msgs::ExtendedCameraInfo info;
-    info.camera_info = *camera_info_ptr_;
-    info.parameters.resize(2);
-    info.parameters[0].name = "z_offset_mm";
-    info.parameters[0].value = z_offset_mm_;
-    info.parameters[1].name = "z_scaling";
-    info.parameters[1].value = z_scaling_;
-    return info;
-  }
-
-private:
-  void cameraInfoCallback(const sensor_msgs::CameraInfo::Ptr camera_info)
-  {
-    camera_info_ptr_ = camera_info;
-    camera_info_valid_ = true;
-  }
-
-  ros::Subscriber camera_info_subscriber_;
-  bool camera_info_valid_;
-
-  sensor_msgs::CameraInfo::Ptr camera_info_ptr_;
-
-  double z_offset_mm_;
-  double z_scaling_;
-};
-
 }  // namespace robot_calibration
 
-#endif  // ROBOT_CALIBRATION_DEPTH_CAMERA_H
+#endif  // ROBOT_CALIBRATION_CAMERA_INFO_H
