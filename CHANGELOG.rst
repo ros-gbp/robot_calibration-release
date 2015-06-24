@@ -2,6 +2,14 @@
 Changelog for package robot_calibration
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+0.5.0 (2015-06-23)
+------------------
+* add new CaptureConfig message for setting up samples
+* update optimizer to handle new types of error blocks
+* cleanup how we use the depth camera manager
+* refactor how feature finders are loaded
+* Contributors: Michael Ferguson
+
 0.4.1 (2015-06-17)
 ------------------
 * check distance to expected pose in tracker process()
