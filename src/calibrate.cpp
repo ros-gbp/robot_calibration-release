@@ -296,13 +296,13 @@ int main(int argc, char** argv)
   if (verbose)
   {
     std::cout << "Parameter Offsets:" << std::endl;
-    std::cout << opt.getOffsets().getOffsetYAML() << std::endl;
+    std::cout << opt.getOffsets()->getOffsetYAML() << std::endl;
   }
 
   // Update the URDF
-  std::string s = opt.getOffsets().updateURDF(description_msg.data);
+  std::string s = opt.getOffsets()->updateURDF(description_msg.data);
 
-  // TODO: generate datecode
+  // Generate datecode
   char datecode[80];
   {
     std::time_t t = std::time(NULL);
@@ -325,28 +325,30 @@ int main(int argc, char** argv)
     depth_name << "/tmp/depth_" << datecode << ".yaml";
     camera_calibration_parsers::writeCalibration(depth_name.str(), "",
         robot_calibration::updateCameraInfo(
-                         opt.getOffsets().get("camera_fx"),
-                         opt.getOffsets().get("camera_fy"),
-                         opt.getOffsets().get("camera_cx"),
-                         opt.getOffsets().get("camera_cy"),
+                         opt.getOffsets()->get("camera_fx"),
+                         opt.getOffsets()->get("camera_fy"),
+                         opt.getOffsets()->get("camera_cx"),
+                         opt.getOffsets()->get("camera_cy"),
                          data[0].observations[0].ext_camera_info.camera_info));  // TODO avoid hardcoding index
 
     std::stringstream rgb_name;
     rgb_name << "/tmp/rgb_" << datecode << ".yaml";
     camera_calibration_parsers::writeCalibration(rgb_name.str(), "",
         robot_calibration::updateCameraInfo(
-                         opt.getOffsets().get("camera_fx"),
-                         opt.getOffsets().get("camera_fy"),
-                         opt.getOffsets().get("camera_cx"),
-                         opt.getOffsets().get("camera_cy"),
+                         opt.getOffsets()->get("camera_fx"),
+                         opt.getOffsets()->get("camera_fy"),
+                         opt.getOffsets()->get("camera_cx"),
+                         opt.getOffsets()->get("camera_cy"),
                          data[0].observations[0].ext_camera_info.camera_info));  // TODO avoid hardcoding index
   }
 
   // Output the calibration yaml
   {
+    std::stringstream yaml_name;
+    yaml_name << "/tmp/calibration_" << datecode << ".yaml";
     std::ofstream file;
-    file.open("/tmp/calibration.yaml");
-    file << opt.getOffsets().getOffsetYAML();
+    file.open(yaml_name.str().c_str());
+    file << opt.getOffsets()->getOffsetYAML();
     file << "depth_info: depth_" << datecode << ".yaml" << std::endl;
     file << "rgb_info: rgb_" << datecode << ".yaml" << std::endl;
     file << "urdf: calibrated_" << datecode << ".urdf" << std::endl;
