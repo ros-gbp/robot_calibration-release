@@ -21,8 +21,6 @@
 #define ROBOT_CALIBRATION_CAPTURE_LED_FINDER_H
 
 #include <ros/ros.h>
-#include <pcl/point_types.h>
-#include <pcl_ros/point_cloud.h>
 #include <robot_calibration/capture/depth_camera.h>
 #include <robot_calibration/capture/feature_finder.h>
 
@@ -56,19 +54,19 @@ class LedFinder : public FeatureFinder
      * @param weight Whether the change between frames should increase
      *        or decrease the LED point values. Should be +/- 1 typically.
      */
-    bool process(pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud,
-                 pcl::PointCloud<pcl::PointXYZRGB>::Ptr prev,
+    bool process(sensor_msgs::PointCloud2& cloud,
+                 sensor_msgs::PointCloud2& prev,
                  geometry_msgs::Point& led_point,
                  double max_distance,
                  double weight);
 
     // Have we found the LED?
-    bool isFound(const pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud,
+    bool isFound(const sensor_msgs::PointCloud2& cloud,
                  double threshold);
 
     // Gives a refined centroid using multiple points
-    bool getRefinedCentroid(const pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud,
-                            geometry_msgs::PointStamped& point);
+    bool getRefinedCentroid(const sensor_msgs::PointCloud2& cloud,
+                            geometry_msgs::PointStamped& centroid);
 
     // Reset the tracker
     void reset(size_t height, size_t width);
@@ -82,7 +80,7 @@ class LedFinder : public FeatureFinder
     int count_;
     size_t height_, width_;
     std::string frame_;  // frame of led coordinates
-    geometry_msgs::Point point;  //coordinates of led this is tracking
+    geometry_msgs::Point point_;  //coordinates of led this is tracking
   };
 
   typedef actionlib::SimpleActionClient<robot_calibration_msgs::GripperLedCommandAction> LedClient;
@@ -98,7 +96,7 @@ public:
   bool find(robot_calibration_msgs::CalibrationData * msg);
 
 private:
-  void cameraCallback(const pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud);
+  void cameraCallback(const sensor_msgs::PointCloud2::ConstPtr& cloud);
   bool waitForCloud();
 
   ros::Subscriber subscriber_;  /// Incoming sensor_msgs::PointCloud2
@@ -106,7 +104,7 @@ private:
   boost::scoped_ptr<LedClient> client_;
 
   bool waiting_;
-  pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_ptr_;
+  sensor_msgs::PointCloud2 cloud_;
 
   std::vector<boost::shared_ptr<ros::Publisher> > tracker_publishers_;
   std::vector<CloudDifferenceTracker> trackers_;
