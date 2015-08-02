@@ -1,3 +1,26 @@
+## robot_calibration (jade) - 0.5.2-0
+
+The packages in the `robot_calibration` repository were released into the `jade` distro by running `/usr/bin/bloom-release -r jade -t jade robot_calibration` on `Sun, 02 Aug 2015 00:36:38 -0000`
+
+These packages were released:
+- `robot_calibration`
+- `robot_calibration_msgs`
+
+Version of package(s) in repository `robot_calibration`:
+- upstream repository: https://github.com/mikeferguson/robot_calibration.git
+- release repository: unknown
+- rosdistro version: `null`
+- old version: `null`
+- new version: `0.5.2-0`
+
+Versions of tools used:
+- bloom version: `0.5.20`
+- catkin_pkg version: `0.2.6`
+- rosdep version: `0.11.0`
+- rosdistro version: `0.4.2`
+- vcstools version: `0.1.36`
+
+
 ## robot_calibration (indigo) - 0.5.2-0
 
 The packages in the `robot_calibration` repository were released into the `indigo` distro by running `/usr/bin/bloom-release -r indigo -t indigo robot_calibration` on `Fri, 03 Jul 2015 22:17:04 -0000`
