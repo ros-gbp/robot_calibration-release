@@ -2,6 +2,13 @@
 Changelog for package robot_calibration
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+0.5.3 (2016-07-18)
+------------------
+* add support for multiple finders in a given pose
+* add support for ground plane calibration
+* add parameter for camera_info_topic in depth camera capture module
+* Contributors: Michael Ferguson, Niharika Arora
+
 0.5.2 (2015-07-03)
 ------------------
 * remove dependency on PCL
