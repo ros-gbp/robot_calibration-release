@@ -34,6 +34,8 @@ find_package(catkin REQUIRED
     sensor_msgs
     std_msgs
     tf
+    tf2_geometry_msgs
+    tf2_ros
 )
 
 catkin_package(
@@ -53,6 +55,8 @@ catkin_package(
     sensor_msgs
     std_msgs
     tf
+    tf2_geometry_msgs
+    tf2_ros
   DEPENDS
     Boost
     Ceres
@@ -78,6 +82,7 @@ add_library(robot_calibration src/calibration_offset_parser.cpp
                               src/led_finder.cpp
                               src/ground_plane_finder.cpp
                               src/models.cpp
+                              src/plane_finder.cpp
                               src/optimization_params.cpp
                               src/optimizer.cpp)
 target_link_libraries(robot_calibration ${Boost_LIBRARIES}
