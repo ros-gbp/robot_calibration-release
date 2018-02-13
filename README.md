@@ -1,3 +1,28 @@
+## robot_calibration (kinetic) - 0.5.5-0
+
+The packages in the `robot_calibration` repository were released into the `kinetic` distro by running `/usr/bin/bloom-release -r kinetic -t kinetic robot_calibration` on `Tue, 13 Feb 2018 03:24:15 -0000`
+
+These packages were released:
+- `robot_calibration`
+- `robot_calibration_msgs`
+
+Version of package(s) in repository `robot_calibration`:
+
+- upstream repository: https://github.com/mikeferguson/robot_calibration.git
+- release repository: unknown
+- rosdistro version: `null`
+- old version: `null`
+- new version: `0.5.5-0`
+
+Versions of tools used:
+
+- bloom version: `0.6.2`
+- catkin_pkg version: `0.3.9`
+- rosdep version: `0.11.8`
+- rosdistro version: `0.6.4`
+- vcstools version: `0.1.40`
+
+
 ## robot_calibration (indigo) - 0.5.4-0
 
 The packages in the `robot_calibration` repository were released into the `indigo` distro by running `/usr/bin/bloom-release -r indigo -t indigo robot_calibration` on `Sat, 20 Jan 2018 17:08:44 -0000`
