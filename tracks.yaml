@@ -17,7 +17,7 @@ tracks:
     name: upstream
     patches: null
     release_inc: '0'
-    release_repo_url: git@github.com:fetchrobotics-gbp/robot_calibration-release.git
+    release_repo_url: git@github.com:ros-gbp/robot_calibration-release.git
     release_tag: :{version}
     ros_distro: indigo
     vcs_type: git
@@ -39,7 +39,7 @@ tracks:
     name: upstream
     patches: null
     release_inc: '0'
-    release_repo_url: git@github.com:fetchrobotics-gbp/robot_calibration-release.git
+    release_repo_url: git@github.com:ros-gbp/robot_calibration-release.git
     release_tag: :{version}
     ros_distro: jade
     vcs_type: git
@@ -63,7 +63,7 @@ tracks:
     name: upstream
     patches: null
     release_inc: '0'
-    release_repo_url: git@github.com:fetchrobotics-gbp/robot_calibration-release.git
+    release_repo_url: git@github.com:ros-gbp/robot_calibration-release.git
     release_tag: :{version}
     ros_distro: kinetic
     vcs_type: git
