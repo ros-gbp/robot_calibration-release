@@ -30,11 +30,12 @@
 #include <robot_calibration_msgs/CaptureConfig.h>
 
 #include <robot_calibration/capture/chain_manager.h>
-#include <robot_calibration/capture/feature_finder.h>
+#include <robot_calibration/capture/feature_finder_loader.h>
 
 #include <camera_calibration_parsers/parse.h>
 #include <robot_calibration/ceres/optimizer.h>
 #include <robot_calibration/camera_info.h>
+#include <robot_calibration/load_bag.h>
 
 #include <boost/foreach.hpp>  // for rosbag iterator
 
@@ -90,8 +91,9 @@ int main(int argc, char** argv)
   {
     // No name provided for a calibration bag file, must do capture
     robot_calibration::ChainManager chain_manager_(nh);
+    robot_calibration::FeatureFinderLoader feature_finder_loader;
     robot_calibration::FeatureFinderMap finders_;
-    if (!robot_calibration::loadFeatureFinders(nh, finders_))
+    if (!feature_finder_loader.load(nh, finders_))
     {
       ROS_FATAL("Unable to load feature finders!");
       return -1;
@@ -254,33 +256,10 @@ int main(int argc, char** argv)
       data_bag_name = argv[2];
     ROS_INFO_STREAM("Loading calibration data from " << data_bag_name);
 
-    rosbag::Bag bag_;
-    try
+    if (!robot_calibration::load_bag(data_bag_name, description_msg, data))
     {
-      bag_.open(data_bag_name, rosbag::bagmode::Read);
-    }
-    catch (rosbag::BagException)
-    {
-      ROS_FATAL_STREAM("Cannot open " << data_bag_name);
+      // Error will have been printed in function
       return -1;
-    }
-
-    // Get robot_description from bag file
-    rosbag::View model_view_(bag_, rosbag::TopicQuery("robot_description"));
-    if (model_view_.size() < 1)
-    {
-      std::cerr << "robot_description topic not found in bag file." << std::endl;
-      return -1;
-    }
-    std_msgs::String::ConstPtr description_ = model_view_.begin()->instantiate<std_msgs::String>();
-    description_msg = *description_;
-
-    // Parse calibration_data topic
-    rosbag::View data_view_(bag_, rosbag::TopicQuery("calibration_data"));
-    BOOST_FOREACH (rosbag::MessageInstance const m, data_view_)
-    {
-      robot_calibration_msgs::CalibrationData::ConstPtr msg = m.instantiate<robot_calibration_msgs::CalibrationData>();
-      data.push_back(*msg);
     }
   }
 

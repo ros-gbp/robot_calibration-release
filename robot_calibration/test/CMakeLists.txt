@@ -1,3 +1,5 @@
+if(CATKIN_ENABLE_TESTING)
+
 find_package(rostest REQUIRED)
 
 catkin_add_gtest(calibration_offset_parser_tests calibration_offset_parser_tests.cpp)
@@ -13,6 +15,13 @@ target_link_libraries(rotation_tests robot_calibration
                                      ${catkin_LIBRARIES}
                                      ${CERES_LIBRARIES}
                                      ${orocos_kdl_LIBRARIES})
+
+add_executable(camera_info_tests camera_info_tests.cpp)
+add_dependencies(tests camera_info_tests)
+target_link_libraries(camera_info_tests robot_calibration
+                                  ${Boost_LIBRARIES}
+                                  ${catkin_LIBRARIES}
+                                  ${GTEST_LIBRARIES})
 
 add_executable(chain_manager_tests chain_manager_tests.cpp)
 add_dependencies(tests chain_manager_tests)
@@ -30,6 +39,22 @@ target_link_libraries(error_block_tests robot_calibration
                                         ${GTEST_LIBRARIES}
                                         ${orocos_kdl_LIBRARIES})
 
+add_executable(error_block_tests2 error_block_tests2.cpp)
+add_dependencies(tests error_block_tests2)
+target_link_libraries(error_block_tests2 robot_calibration
+                                         ${Boost_LIBRARIES}
+                                         ${catkin_LIBRARIES}
+                                         ${CERES_LIBRARIES}
+                                         ${GTEST_LIBRARIES}
+                                         ${orocos_kdl_LIBRARIES})
+
+add_executable(feature_finder_loader_tests feature_finder_loader_tests.cpp)
+add_dependencies(tests feature_finder_loader_tests)
+target_link_libraries(feature_finder_loader_tests robot_calibration
+                                                  ${Boost_LIBRARIES}
+                                                  ${catkin_LIBRARIES}
+                                                  ${GTEST_LIBRARIES})
+
 add_executable(optimization_param_tests optimization_param_tests.cpp)
 add_dependencies(tests optimization_param_tests)
 target_link_libraries(optimization_param_tests robot_calibration
@@ -37,6 +62,11 @@ target_link_libraries(optimization_param_tests robot_calibration
                                                ${catkin_LIBRARIES}
                                                ${GTEST_LIBRARIES})
 
+add_rostest(camera_info_tests.test)
 add_rostest(chain_manager_tests.test)
+add_rostest(feature_finder_loader_tests.test)
 add_rostest(optimization_param_tests.test)
 add_rostest(error_block_tests.test)
+add_rostest(error_block_tests2.test)
+
+endif()  # if CATKIN_ENABLE_TESTING
