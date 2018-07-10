@@ -29,6 +29,7 @@ find_package(catkin REQUIRED
     kdl_parser
     moveit_msgs
     nav_msgs
+    pluginlib
     robot_calibration_msgs
     rosbag
     roscpp
@@ -37,6 +38,7 @@ find_package(catkin REQUIRED
     tf
     tf2_geometry_msgs
     tf2_ros
+    visualization_msgs
 )
 
 catkin_package(
@@ -50,6 +52,7 @@ catkin_package(
     kdl_parser
     moveit_msgs
     nav_msgs
+    pluginlib
     robot_calibration_msgs
     rosbag
     roscpp
@@ -60,7 +63,6 @@ catkin_package(
     tf2_ros
   DEPENDS
     Boost
-    Ceres
     orocos_kdl
   LIBRARIES
     robot_calibration
@@ -78,21 +80,26 @@ target_link_libraries(calibrate_base ${Boost_LIBRARIES}
 
 add_library(robot_calibration src/calibration_offset_parser.cpp
                               src/chain_manager.cpp
-                              src/checkerboard_finder.cpp
-                              src/feature_finder.cpp
-                              src/led_finder.cpp
-                              src/ground_plane_finder.cpp
                               src/models.cpp
-                              src/plane_finder.cpp
                               src/optimization_params.cpp
                               src/optimizer.cpp)
 target_link_libraries(robot_calibration ${Boost_LIBRARIES}
                                         ${catkin_LIBRARIES}
                                         ${CERES_LIBRARIES}
                                         ${tinyxml_LIBRARIES}
-                                        ${orocos_kdl_LIBRARIES}
-                                        ${OpenCV_LIBS})
-add_dependencies(robot_calibration robot_calibration_msgs_gencpp)
+                                        ${orocos_kdl_LIBRARIES})
+add_dependencies(robot_calibration robot_calibration_msgs_generate_messages_cpp)
+
+add_library(robot_calibration_feature_finders src/finders/checkerboard_finder.cpp
+                                              src/finders/led_finder.cpp
+                                              src/finders/plane_finder.cpp)
+target_link_libraries(robot_calibration_feature_finders robot_calibration
+                                                        ${Boost_LIBRARIES}
+                                                        ${catkin_LIBRARIES}
+                                                        ${tinyxml_LIBRARIES}
+                                                        ${orocos_kdl_LIBRARIES}
+                                                        ${OpenCV_LIBS})
+add_dependencies(robot_calibration_feature_finders robot_calibration_msgs_generate_messages_cpp)
 
 add_executable(calibrate src/calibrate.cpp)
 target_link_libraries(calibrate robot_calibration
@@ -104,11 +111,36 @@ target_link_libraries(calibrate robot_calibration
                                 ${OpenCV_LIBS})
 add_dependencies(calibrate robot_calibration)
 
+add_executable(to_rpy src/tools/to_rpy.cpp)
+target_link_libraries(to_rpy robot_calibration
+                             ${Boost_LIBRARIES}
+                             ${catkin_LIBRARIES}
+                             ${orocos_kdl_LIBRARIES})
+add_dependencies(to_rpy robot_calibration)
+
+add_executable(viz src/tools/viz.cpp)
+target_link_libraries(viz robot_calibration
+                             ${Boost_LIBRARIES}
+                             ${catkin_LIBRARIES}
+                             ${orocos_kdl_LIBRARIES})
+add_dependencies(viz robot_calibration)
+
 add_subdirectory(test)
 
 install(DIRECTORY include/ DESTINATION include)
 
-install(TARGETS calibrate calibrate_base robot_calibration
+install(TARGETS
+	calibrate
+	calibrate_base
+	robot_calibration
+	robot_calibration_feature_finders
+	to_rpy
+	viz
   ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
   LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
-  RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION})
+  RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+ )
+
+install(FILES robot_calibration.xml
+  DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
+)
