@@ -1,11 +1,11 @@
 <package>
   <name>robot_calibration_msgs</name>
-  <version>0.5.5</version>
+  <version>0.6.0</version>
   <description>
     Messages for calibrating a robot
   </description>
   <author>Michael Ferguson</author>
-  <maintainer email="mferguson@fetchrobotics.com">Michael Ferguson</maintainer>
+  <maintainer email="mike@vanadiumlabs.com">Michael Ferguson</maintainer>
   <license>Apache2</license>
   <url>http://ros.org/wiki/robot_calibration_msgs</url>
   
