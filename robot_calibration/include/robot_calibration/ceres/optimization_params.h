@@ -1,4 +1,5 @@
 /*
+ * Copyright (C) 2018 Michael Ferguson
  * Copyright (C) 2014 Fetch Robotics Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -38,6 +39,17 @@ struct OptimizationParams
     bool yaw;
   };
 
+  struct FreeFrameInitialValue
+  {
+    std::string name;
+    double x;
+    double y;
+    double z;
+    double roll;
+    double pitch;
+    double yaw;
+  };
+
   struct Params
   {
     std::string name;
@@ -48,11 +60,24 @@ struct OptimizationParams
   std::string base_link;
   std::vector<std::string> free_params;
   std::vector<FreeFrameParams> free_frames;
+  std::vector<FreeFrameInitialValue> free_frames_initial_values;
   std::vector<Params> models;
   std::vector<Params> error_blocks;
 
   OptimizationParams();
   bool LoadFromROS(ros::NodeHandle& nh);
+
+  template<typename T>
+  T getParam(Params& params, const std::string& name, T default_value)
+  {
+    if (!params.params.hasMember(name))
+    {
+      ROS_WARN_STREAM(name << " was not set, using default of " << default_value);
+      return default_value;
+    }
+
+    return static_cast<T>(params.params[name]);
+  }
 };
 
 }  // namespace robot_calibration

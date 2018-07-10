@@ -221,7 +221,7 @@ TEST(ErrorBlockTests, error_blocks_maxwell)
   msg.joint_states.name[8] = "head_tilt_joint";
   msg.joint_states.name[9] = "arm_lift_joint";
   msg.joint_states.position.resize(10);
-  msg.joint_states.position[0] = 0.0;
+  msg.joint_states.position[0] = -0.05;  // Add some error
   msg.joint_states.position[1] = -0.814830;
   msg.joint_states.position[2] = -0.00022290000000002586;
   msg.joint_states.position[3] = 0.0;
@@ -278,29 +278,21 @@ TEST(ErrorBlockTests, error_blocks_maxwell)
   msg.observations[0].features[0].point.z = 0.517497963716;
   data.push_back(msg);
 
-  // Test some helpers
-  EXPECT_EQ(0, robot_calibration::getSensorIndex(msg, "camera"));
-  EXPECT_EQ(-1, robot_calibration::getSensorIndex(msg, "camera2"));
-
   // Setup params
   robot_calibration::OptimizationParams params;
   params.LoadFromROS(nh);
 
   // Optimize
-  opt.optimize(params, data, true);
-  EXPECT_DOUBLE_EQ( 1.677961517431734e-25, opt.summary()->initial_cost);
-  // 14 joints + 6 from a free frame
-  EXPECT_EQ(20, opt.getNumParameters());
+  opt.optimize(params, data, false);
+  EXPECT_GT(opt.summary()->initial_cost, 0.001);
+  EXPECT_LT(opt.summary()->final_cost, 1e-18);
+  EXPECT_GT(opt.summary()->iterations.size(), static_cast<size_t>(1));  // expect more than 1 iteration
+  // The -0.05 we added above should be calibrated off
+  EXPECT_LT(fabs(0.05 - opt.getOffsets()->get("arm_lift_joint")), 0.001);
+  // 1 joint
+  EXPECT_EQ(1, opt.getNumParameters());
   // 3 CalibrationData, each with chain3d with a single observed point (3 residuals)
-  EXPECT_EQ(30, opt.getNumResiduals());
-
-  // While things are setup, test our param helpers
-  // This param does not exist, we should get the default
-  double test = params.getParam(params.error_blocks[1], "test", 10.0);
-  EXPECT_EQ(10, test);
-  // This does exist, we should get what is in our YAML file
-  double scale = params.getParam(params.error_blocks[1], "joint_scale", 10.0);
-  EXPECT_EQ(0.0, scale);
+  EXPECT_EQ(9, opt.getNumResiduals());
 }
 
 int main(int argc, char** argv)
