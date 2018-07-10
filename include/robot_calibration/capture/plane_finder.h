@@ -19,9 +19,10 @@
 
 #include <ros/ros.h>
 #include <robot_calibration/capture/depth_camera.h>
-#include <robot_calibration/capture/feature_finder.h>
+#include <robot_calibration/plugins/feature_finder.h>
 #include <robot_calibration_msgs/CalibrationData.h>
 #include <cv_bridge/cv_bridge.h>
+#include <tf2_ros/transform_listener.h>
 
 namespace robot_calibration
 {
@@ -29,8 +30,8 @@ namespace robot_calibration
 class PlaneFinder : public FeatureFinder
 {
 public:
-  PlaneFinder(ros::NodeHandle & n);
-
+  PlaneFinder();
+  bool init(const std::string& name, ros::NodeHandle & n);
   bool find(robot_calibration_msgs::CalibrationData * msg);
 
 private:
@@ -39,6 +40,9 @@ private:
 
   ros::Subscriber subscriber_;
   ros::Publisher publisher_;
+
+  tf2_ros::Buffer tfBuffer_;
+  tf2_ros::TransformListener tfListener_;
 
   bool waiting_;
   sensor_msgs::PointCloud2 cloud_;
@@ -53,6 +57,8 @@ private:
   double min_z_;
   double max_z_;
   std::string transform_frame_;
+
+  bool output_debug_;
 };
 
 }  // namespace robot_calibration
