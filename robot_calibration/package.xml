@@ -1,6 +1,6 @@
 <package>
   <name>robot_calibration</name>
-  <version>0.6.0</version>
+  <version>0.6.1</version>
   <description>
     Calibrate a Robot
   </description>
@@ -57,6 +57,8 @@
   <run_depend>libceres-dev</run_depend>
   <run_depend>suitesparse</run_depend>
   <run_depend>protobuf-dev</run_depend>
+
+  <test_depend>code_coverage</test_depend>
 
   <export>
     <robot_calibration plugin="${prefix}/robot_calibration.xml"/>
