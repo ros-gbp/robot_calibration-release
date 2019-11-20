@@ -2,6 +2,9 @@
 Changelog for package robot_calibration_msgs
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+0.6.1 (2019-11-19)
+------------------
+
 0.6.0 (2018-07-09)
 ------------------
 * update maintainer email
