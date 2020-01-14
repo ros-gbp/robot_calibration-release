@@ -50,7 +50,7 @@ std::string robot_description_updated =
 "  </joint>\n"
 "  <link name=\"link_2\" />\n"
 "  <joint name=\"third_joint\" type=\"fixed\">\n"
-"    <origin rpy=\"0.10000000 -1.30000000 0.30000000\" xyz=\"4.00000000 5.00000000 6.05260000\" />\n"
+"    <origin rpy=\"1.57000000 -1.50000000 0.00000000\" xyz=\"0.00000000 0.00000000 0.05260000\" />\n"
 "    <parent link=\"link_2\" />\n"
 "    <child link=\"link_3\" />\n"
 "  </joint>\n"
@@ -64,10 +64,10 @@ TEST(CalibrationOffsetParserTests, test_urdf_update)
   p.add("second_joint");
   p.addFrame("third_joint", true, true, true, true, true, true);
 
-  double params[7] = {0.245, 4, 5, 6, 0, 0, 0};
+  double params[7] = {0.245, 0, 0, 0, 0, 0, 0};
 
   // set angles
-  KDL::Rotation r = KDL::Rotation::RPY(0.1, 0.2, 0.3);
+  KDL::Rotation r = KDL::Rotation::RPY(1.57, 0, 0);
   robot_calibration::axis_magnitude_from_rotation(r, params[4], params[5], params[6]);
 
   p.update(params);
@@ -85,6 +85,51 @@ TEST(CalibrationOffsetParserTests, test_urdf_update)
   {
     ASSERT_STREQ(robot_pieces[i].c_str(), s_pieces[i].c_str());
   }
+}
+
+TEST(CalibrationOffsetParserTests, test_multi_step)
+{
+  robot_calibration::CalibrationOffsetParser p;
+
+  p.add("first_step_joint1");
+  p.add("first_step_joint2");
+
+  double params[2] = {0.245, 0.44};
+  p.update(params);
+
+  EXPECT_EQ(0.245, p.get("first_step_joint1"));
+  EXPECT_EQ(0.44, p.get("first_step_joint2"));
+  EXPECT_EQ((size_t) 2, p.size());
+
+  // Reset num of free params
+  p.reset();
+  EXPECT_EQ((size_t) 0, p.size());
+
+  // Add a new one for second step
+  p.add("second_step_joint1");
+  EXPECT_EQ((size_t) 1, p.size());
+
+  params[0] *= 2.0;
+  p.update(params);
+
+  EXPECT_EQ(0.245, p.get("first_step_joint1"));
+  EXPECT_EQ(0.44, p.get("first_step_joint2"));
+  EXPECT_EQ(0.49, p.get("second_step_joint1"));
+
+  // Reset num of free params
+  p.reset();
+  EXPECT_EQ((size_t) 0, p.size());
+
+  // Reuse a param for a third step
+  p.add("first_step_joint1");
+  EXPECT_EQ((size_t) 1, p.size());
+
+  params[0] *= 2.0;
+  p.update(params);
+
+  EXPECT_EQ(0.98, p.get("first_step_joint1"));
+  EXPECT_EQ(0.44, p.get("first_step_joint2"));
+  EXPECT_EQ(0.49, p.get("second_step_joint1"));
 }
 
 int main(int argc, char** argv)
