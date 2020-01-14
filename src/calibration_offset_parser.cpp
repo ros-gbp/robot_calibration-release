@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2018 Michael Ferguson
+ * Copyright (C) 2018-2019 Michael Ferguson
  * Copyright (C) 2013-2014 Unbounded Robotics Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -31,13 +31,35 @@ namespace robot_calibration
 
 CalibrationOffsetParser::CalibrationOffsetParser()
 {
-  // TODO?
+  num_free_params_ = 0;
 }
 
 bool CalibrationOffsetParser::add(const std::string name)
 {
-  parameter_names_.push_back(name);
-  parameter_offsets_.push_back(0.0);
+  double value = 0.0;
+
+  // Check against parameters
+  for (size_t i = 0; i < parameter_names_.size(); ++i)
+  {
+    if (parameter_names_[i] == name)
+    {
+      if (i < num_free_params_)
+      {
+        // This is already a free param, don't re-add
+        return false;
+      }
+      // Get the current value
+      value = parameter_offsets_[i];
+      // Remove the non-free-param version
+      parameter_names_.erase(parameter_names_.begin() + i);
+      parameter_offsets_.erase(parameter_offsets_.begin() + i);
+    }
+  }
+
+  // Add the parameter at end of current free params
+  parameter_names_.insert(parameter_names_.begin() + num_free_params_, name);
+  parameter_offsets_.insert(parameter_offsets_.begin() + num_free_params_, value);
+  ++num_free_params_;
   return true;
 }
 
@@ -68,7 +90,7 @@ bool CalibrationOffsetParser::addFrame(
 
 bool CalibrationOffsetParser::set(const std::string name, double value)
 {
-  for (size_t i = 0; i < parameter_names_.size(); ++i)
+  for (size_t i = 0; i < num_free_params_; ++i)
   {
     if (parameter_names_[i] == name)
     {
@@ -102,14 +124,14 @@ bool CalibrationOffsetParser::setFrame(
 
 bool CalibrationOffsetParser::initialize(double* free_params)
 {
-  for (size_t i = 0; i < parameter_offsets_.size(); ++i)
+  for (size_t i = 0; i < num_free_params_; ++i)
     free_params[i] = parameter_offsets_[i];
   return true;
 }
 
 bool CalibrationOffsetParser::update(const double* const free_params)
 {
-  for (size_t i = 0; i < parameter_offsets_.size(); ++i)
+  for (size_t i = 0; i < num_free_params_; ++i)
     parameter_offsets_[i] = free_params[i];
   return true;
 }
@@ -153,9 +175,15 @@ bool CalibrationOffsetParser::getFrame(const std::string name, KDL::Frame& offse
   return true;
 }
 
-int CalibrationOffsetParser::size()
+size_t CalibrationOffsetParser::size()
 {
-  return parameter_names_.size();
+  return num_free_params_;
+}
+
+bool CalibrationOffsetParser::reset()
+{
+  num_free_params_ = 0;
+  return true;
 }
 
 bool CalibrationOffsetParser::loadOffsetYAML(const std::string& filename)
@@ -252,13 +280,6 @@ std::string CalibrationOffsetParser::updateURDF(const std::string &urdf)
       std::vector<double> xyz(3, 0.0);
       std::vector<double> rpy(3, 0.0);
 
-      xyz[0] = frame_offset.p.x();
-      xyz[1] = frame_offset.p.y();
-      xyz[2] = frame_offset.p.z();
-
-      // Get roll, pitch, yaw about fixed axis
-      frame_offset.M.GetRPY(rpy[0], rpy[1], rpy[2]);
-
       // String streams for output
       std::stringstream xyz_ss, rpy_ss;
 
@@ -273,52 +294,45 @@ std::string CalibrationOffsetParser::updateURDF(const std::string &urdf)
         std::vector<std::string> xyz_pieces;
         boost::split(xyz_pieces, xyz_str, boost::is_any_of(" "));
 
-        if (xyz_pieces.size() == 3)
-        {
-          // Update xyz
-          for (int i = 0; i < 3; ++i)
-          {
-            double x = double(boost::lexical_cast<double>(xyz_pieces[i]) + xyz[i]);
-            if (i > 0)
-              xyz_ss << " ";
-            xyz_ss << std::fixed << std::setprecision(precision) << x;
-          }
-        }
-        else
-        {
-          // Create xyz
-          for (int i = 0; i < 3; ++i)
-          {
-            if (i > 0)
-              xyz_ss << " ";
-            xyz_ss << std::fixed << std::setprecision(precision) << xyz[i];
-          }
-        }
-
         // Split out rpy of origin, break into 3 strings
         std::vector<std::string> rpy_pieces;
         boost::split(rpy_pieces, rpy_str, boost::is_any_of(" "));
 
+        KDL::Frame origin(KDL::Rotation::Identity(), KDL::Vector::Zero());
+        if (xyz_pieces.size() == 3)
+        {
+          origin.p = KDL::Vector(boost::lexical_cast<double>(xyz_pieces[0]), boost::lexical_cast<double>(xyz_pieces[1]), boost::lexical_cast<double>(xyz_pieces[2]));
+        }
+
         if (rpy_pieces.size() == 3)
         {
-          // Update rpy
-          for (int i = 0; i < 3; ++i)
-          {
-            double x = double(boost::lexical_cast<double>(rpy_pieces[i]) + rpy[i]);
-            if (i > 0)
-              rpy_ss << " ";
-            rpy_ss << std::fixed << std::setprecision(precision) << x;
-          }
+          origin.M = KDL::Rotation::RPY(boost::lexical_cast<double>(rpy_pieces[0]), boost::lexical_cast<double>(rpy_pieces[1]), boost::lexical_cast<double>(rpy_pieces[2]));
         }
-        else
+
+        // Update
+        origin = origin * frame_offset;
+
+        xyz[0] = origin.p.x();
+        xyz[1] = origin.p.y();
+        xyz[2] = origin.p.z();
+
+        // Get roll, pitch, yaw about fixed axis
+        origin.M.GetRPY(rpy[0], rpy[1], rpy[2]);
+
+        // Update xyz
+        for (int i = 0; i < 3; ++i)
         {
-          // Create rpy
-          for (int i = 0; i < 3; ++i)
-          {
-            if (i > 0)
-              rpy_ss << " ";
-            rpy_ss << std::fixed << std::setprecision(precision) << rpy[i];
-          }
+          if (i > 0)
+            xyz_ss << " ";
+          xyz_ss << std::fixed << std::setprecision(precision) << xyz[i];
+        }
+
+        // Update rpy
+        for (int i = 0; i < 3; ++i)
+        {
+          if (i > 0)
+            rpy_ss << " ";
+          rpy_ss << std::fixed << std::setprecision(precision) << rpy[i];
         }
 
         // Update xml
@@ -327,6 +341,13 @@ std::string CalibrationOffsetParser::updateURDF(const std::string &urdf)
       }
       else
       {
+        xyz[0] = frame_offset.p.x();
+        xyz[1] = frame_offset.p.y();
+        xyz[2] = frame_offset.p.z();
+
+        // Get roll, pitch, yaw about fixed axis
+        frame_offset.M.GetRPY(rpy[0], rpy[1], rpy[2]);
+
         // No existing origin, create an element with attributes
         origin_xml = new TiXmlElement("origin");
 
