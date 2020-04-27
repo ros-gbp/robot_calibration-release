@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 2.8.3)
 project(robot_calibration)
 
 if (CMAKE_COMPILER_IS_GNUCC OR CMAKE_COMPILER_IS_GNUCXX)
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -Wall")
 endif()
 
 find_package(Boost REQUIRED system thread)
@@ -66,11 +66,11 @@ catkin_package(
     orocos_kdl
   LIBRARIES
     robot_calibration
+    robot_calibration_feature_finders
 )
 
 if (CATKIN_ENABLE_TESTING AND ENABLE_COVERAGE_TESTING)
   find_package(code_coverage REQUIRED)
-  include(CodeCoverage)
   APPEND_COVERAGE_COMPILER_FLAGS()
 endif()
 
@@ -83,6 +83,12 @@ link_directories(${orocos_kdl_LIBRARY_DIRS}) # this is a hack, will eventually b
 add_executable(calibrate_base src/calibrate_base.cpp)
 target_link_libraries(calibrate_base ${Boost_LIBRARIES}
                                      ${catkin_LIBRARIES})
+
+add_executable(magnetometer_calibration src/magnetometer_calibration.cpp)
+target_link_libraries(magnetometer_calibration
+  ${Boost_LIBRARIES}
+  ${catkin_LIBRARIES}
+  ${CERES_LIBRARIES})
 
 add_library(robot_calibration src/calibration_offset_parser.cpp
                               src/chain_manager.cpp
