@@ -121,7 +121,7 @@ int main(int argc, char** argv)
       {
         bag.open(pose_bag_name, rosbag::bagmode::Read);
       }
-      catch (rosbag::BagException)
+      catch (rosbag::BagException&)
       {
         ROS_FATAL_STREAM("Cannot open " << pose_bag_name);
         return -1;
@@ -196,9 +196,9 @@ int main(int argc, char** argv)
 
       // Get pose of the features
       bool found_all_features = true;
-      if (poses.size() == 0)
+      if (poses.size() == 0 || poses[pose_idx].features.empty())
       {
-        // In manual mode, we need to capture all features
+        // In manual mode, or if features are unspecified, we need to capture all features
         for (robot_calibration::FeatureFinderMap::iterator it = finders_.begin();
              it != finders_.end();
              it++)
