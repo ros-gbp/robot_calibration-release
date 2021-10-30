@@ -2,6 +2,9 @@
 Changelog for package robot_calibration_msgs
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+0.6.5 (2021-10-30)
+------------------
+
 0.6.4 (2020-11-02)
 ------------------
 * update package.xml for noetic (`#87 <https://github.com/mikeferguson/robot_calibration/issues/87>`_)

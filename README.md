@@ -58,9 +58,21 @@ YAML file specifies the details needed for data capture:
 The second configuration file specifies the configuration for optimization.
 This specifies several items:
 
+ * base_link - Frame used for internal calculations. Typically, the root of the
+   URDF is used. Often `base_link`.
  * models - Models define how to reproject points. The basic model is a
    kinematic chain. Additional models can reproject through a kinematic
-   chain and then a sensor, such as a 3d camera.
+   chain and then a sensor, such as a 3d camera. For IK chains, `frame` parameter
+   is the tip of the IK chain.
+   * chain - Represents a kinematic chain from the `base_link` to the `frame`
+     parameter (which in MoveIt/KDL terms is usually referred to as the `tip`).
+   * camera3d - Represents a kinematic chain from the `base_link` to the `frame`
+     parameter, and includes the pinhole camera model parameters (cx, cy, fx, fy)
+     when doing projection of the points. This model only works if your sensor
+     publishes CameraInfo. Further, the calibration obtained when this model is
+     used and any of the pinhole parameters are free parameters is only valid if
+     the physical sensor actually uses the CameraInfo for 3d projection (this
+     is generally true for the Primesense/Astra sensors).
  * free_params - Defines the names of single-value free parameters. These
    can be the names of a joint for which the joint offset should be calculated,
    camera parameters such as focal lengths, or other parameters, such as
@@ -81,7 +93,7 @@ This specifies several items:
    * chain3d_to_chain3d - This error block can compute the difference in
      reprojection between two 3D "sensors" which tell us the position of
      certain features of interest. Sensors might be a 3D camera or an arm
-     which is holding a checkerboard.
+     which is holding a checkerboard. Was previously called "camera3d_to_arm".
    * chain3d_to_plane - This error block can compute the difference between
      projected 3d points and a desired plane. The most common use case is making
      sure that the ground plane a robot sees is really on the ground.
@@ -207,7 +219,5 @@ and _mag_bias_z_, which can be used with the <code>imu_filter_madgwick</code> pa
 
 # Status
 
- * Kinetic Devel Job Status: [![Build Status](http://build.ros.org/buildStatus/icon?job=Kdev__robot_calibration__ubuntu_xenial_amd64)](http://build.ros.org/job/Kdev__robot_calibration__ubuntu_xenial_amd64/)
- * Kinetic AMD64 Debian Job Status: [![Build Status](http://build.ros.org/buildStatus/icon?job=Kbin_uX64__robot_calibration__ubuntu_xenial_amd64__binary)](http://build.ros.org/job/Kbin_uX64__robot_calibration__ubuntu_xenial_amd64__binary/)
  * Melodic Devel Job Status: [![Build Status](http://build.ros.org/buildStatus/icon?job=Mdev__robot_calibration__ubuntu_bionic_amd64)](http://build.ros.org/job/Mdev__robot_calibration__ubuntu_bionic_amd64/)
  * Melodic Coverage: [![codecov](https://codecov.io/gh/mikeferguson/robot_calibration/branch/master/graph/badge.svg)](https://codecov.io/gh/mikeferguson/robot_calibration)
