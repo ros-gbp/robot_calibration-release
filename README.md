@@ -1,3 +1,28 @@
+## robot_calibration (melodic) - 0.6.5-1
+
+The packages in the `robot_calibration` repository were released into the `melodic` distro by running `/usr/bin/bloom-release -t melodic -r melodic robot_calibration` on `Sat, 30 Oct 2021 13:20:05 -0000`
+
+These packages were released:
+- `robot_calibration`
+- `robot_calibration_msgs`
+
+Version of package(s) in repository `robot_calibration`:
+
+- upstream repository: https://github.com/mikeferguson/robot_calibration.git
+- release repository: https://github.com/ros-gbp/robot_calibration-release.git
+- rosdistro version: `0.6.4-1`
+- old version: `0.6.4-1`
+- new version: `0.6.5-1`
+
+Versions of tools used:
+
+- bloom version: `0.10.1`
+- catkin_pkg version: `0.4.20`
+- rosdep version: `0.19.0`
+- rosdistro version: `0.8.2`
+- vcstools version: `0.1.40`
+
+
 ## robot_calibration (noetic) - 0.6.4-1
 
 The packages in the `robot_calibration` repository were released into the `noetic` distro by running `/usr/bin/bloom-release -r noetic -t noetic robot_calibration` on `Mon, 02 Nov 2020 20:16:21 -0000`
