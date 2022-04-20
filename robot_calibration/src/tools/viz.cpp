@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2018-2020 Michael Ferguson
+ * Copyright (C) 2018-2022 Michael Ferguson
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,8 +15,6 @@
  */
 
 // Author: Michael Ferguson
-
-//#include <fstream>
 
 #include <ros/ros.h>
 #include <robot_calibration/load_bag.h>
@@ -48,6 +46,12 @@ int main(int argc, char** argv)
   // Start up ROS
   ros::init(argc, argv, "robot_calibration_viz");
   ros::NodeHandle nh("~");
+
+  // Publisher of fake joint states (latched)
+  ros::Publisher state = nh.advertise<sensor_msgs::JointState>("/fake_controller_joint_states", 1, true);
+
+  // Publisher of visualization (latched)
+  ros::Publisher pub = nh.advertise<visualization_msgs::MarkerArray>("data", 10, true);
 
   // The calibration data
   std_msgs::String description_msg;
@@ -97,7 +101,13 @@ int main(int argc, char** argv)
     {
       ROS_INFO_STREAM("Creating camera3d '" << params.models[i].name << "' in frame " <<
                                                params.models[i].params["frame"]);
-      robot_calibration::Camera3dModel* model = new robot_calibration::Camera3dModel(params.models[i].name, tree, params.base_link, params.models[i].params["frame"]);
+      std::string param_name = params.models[i].params["param_name"];
+      if (param_name == "")
+      {
+        // Default to same name as sensor
+        param_name = params.models[i].name;
+      }
+      robot_calibration::Camera3dModel* model = new robot_calibration::Camera3dModel(params.models[i].name, param_name, tree, params.base_link, params.models[i].params["frame"]);
       models[params.models[i].name] = model;
       model_names.push_back(params.models[i].name);
       camera_pubs[params.models[i].name] = nh.advertise<sensor_msgs::PointCloud2>(params.models[i].name, 1);
@@ -183,11 +193,7 @@ int main(int argc, char** argv)
     }
   }
 
-  // Publisher of fake joint states
-  ros::Publisher state = nh.advertise<sensor_msgs::JointState>("/fake_controller_joint_states", 1);
-
-  // Publisher of visualization
-  ros::Publisher pub = nh.advertise<visualization_msgs::MarkerArray>("data", 10);
+  // Publish messages
   for (size_t i = 0; i < data.size(); ++i)
   {
     // Break out if ROS is dead
@@ -202,6 +208,11 @@ int main(int argc, char** argv)
       std::vector<geometry_msgs::PointStamped> points;
       points = models[model_names[m]]->project(data[i], offsets);
 
+      if (points.empty())
+      {
+        continue;
+      }
+
       // Convert into marker
       visualization_msgs::Marker msg;
       msg.header.frame_id = params.base_link;
@@ -210,9 +221,9 @@ int main(int argc, char** argv)
       msg.id = m;
       msg.type = msg.SPHERE_LIST;
       msg.pose.orientation.w = 1.0;
-      msg.scale.x = 0.005;
-      msg.scale.y = 0.005;
-      msg.scale.z = 0.005;
+      msg.scale.x = 0.01;
+      msg.scale.y = 0.01;
+      msg.scale.z = 0.01;
       msg.points.push_back(points[0].point);
       msg.colors.push_back(model_colors[0]);
       for (size_t p = 1; p < points.size(); ++p)
