@@ -2,7 +2,7 @@
 <package format="3">
 
   <name>robot_calibration</name>
-  <version>0.6.5</version>
+  <version>0.7.0</version>
   <description>
     Calibrate a Robot
   </description>
@@ -13,11 +13,14 @@
   
   <buildtool_depend>catkin</buildtool_depend>
 
+  <build_depend>eigen</build_depend>
+
   <depend>actionlib</depend>
   <depend>camera_calibration_parsers</depend>
   <depend>control_msgs</depend>
   <depend>cv_bridge</depend>
   <depend>geometry_msgs</depend>
+  <depend>geometric_shapes</depend>
   <depend>kdl_parser</depend>
   <depend>moveit_msgs</depend>
   <depend>nav_msgs</depend>
