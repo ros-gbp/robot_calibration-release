@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 2.8.3)
+cmake_minimum_required(VERSION 3.0.2)
 project(robot_calibration)
 
 if (CMAKE_COMPILER_IS_GNUCC OR CMAKE_COMPILER_IS_GNUCXX)
@@ -19,6 +19,7 @@ endif ()
 
 find_package(orocos_kdl)
 find_package(Ceres REQUIRED)
+find_package(Eigen3 REQUIRED)
 find_package(OpenCV REQUIRED)
 find_package(catkin REQUIRED
   COMPONENTS
@@ -26,6 +27,7 @@ find_package(catkin REQUIRED
     camera_calibration_parsers
     cv_bridge
     geometry_msgs
+    geometric_shapes
     kdl_parser
     moveit_msgs
     nav_msgs
@@ -49,6 +51,7 @@ catkin_package(
     camera_calibration_parsers
     cv_bridge
     geometry_msgs
+    geometric_shapes
     kdl_parser
     moveit_msgs
     nav_msgs
@@ -74,10 +77,12 @@ if (CATKIN_ENABLE_TESTING AND ENABLE_COVERAGE_TESTING)
   APPEND_COVERAGE_COMPILER_FLAGS()
 endif()
 
-include_directories(include ${Boost_INCLUDE_DIRS}
-                            ${catkin_INCLUDE_DIRS}
-                            ${CERES_INCLUDES}
-                            ${orocos_kdl_INCLUDE_DIRS})
+include_directories(include
+                    ${Boost_INCLUDE_DIRS}
+                    ${catkin_INCLUDE_DIRS}
+                    ${CERES_INCLUDES}
+                    ${EIGEN3_INCLUDE_DIRS}
+                    ${orocos_kdl_INCLUDE_DIRS})
 link_directories(${orocos_kdl_LIBRARY_DIRS}) # this is a hack, will eventually be unneeded once orocos-kdl is fixed
 
 add_executable(calibrate_base src/calibrate_base.cpp)
@@ -92,6 +97,7 @@ target_link_libraries(magnetometer_calibration
 
 add_library(robot_calibration src/calibration_offset_parser.cpp
                               src/chain_manager.cpp
+                              src/mesh_loader.cpp
                               src/models.cpp
                               src/optimization_params.cpp
                               src/optimizer.cpp)
@@ -104,7 +110,9 @@ add_dependencies(robot_calibration robot_calibration_msgs_generate_messages_cpp)
 
 add_library(robot_calibration_feature_finders src/finders/checkerboard_finder.cpp
                                               src/finders/led_finder.cpp
-                                              src/finders/plane_finder.cpp)
+                                              src/finders/plane_finder.cpp
+                                              src/finders/robot_finder.cpp
+                                              src/finders/scan_finder.cpp)
 target_link_libraries(robot_calibration_feature_finders robot_calibration
                                                         ${Boost_LIBRARIES}
                                                         ${catkin_LIBRARIES}
@@ -137,6 +145,13 @@ target_link_libraries(viz robot_calibration
                              ${orocos_kdl_LIBRARIES})
 add_dependencies(viz robot_calibration)
 
+add_executable(viz_mesh src/tools/viz_mesh.cpp)
+target_link_libraries(viz_mesh robot_calibration
+                               ${Boost_LIBRARIES}
+                               ${catkin_LIBRARIES}
+                               ${orocos_kdl_LIBRARIES})
+add_dependencies(viz_mesh robot_calibration)
+
 add_subdirectory(test)
 
 install(DIRECTORY include/ DESTINATION include)
@@ -148,6 +163,7 @@ install(TARGETS
 	robot_calibration_feature_finders
 	to_rpy
 	viz
+  viz_mesh
   ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
   LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
