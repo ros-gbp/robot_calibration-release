@@ -1,0 +1,12 @@
+Source: ros-melodic-robot-calibration
+Section: misc
+Priority: optional
+Maintainer: Michael Ferguson <mike@vanadiumlabs.com>
+Build-Depends: debhelper (>= 9.0.0), libceres-dev, libeigen3-dev, libgflags-dev, libprotobuf-dev, libprotoc-dev, libsuitesparse-dev, protobuf-compiler, ros-melodic-actionlib, ros-melodic-camera-calibration-parsers, ros-melodic-catkin, ros-melodic-code-coverage <!nocheck>, ros-melodic-control-msgs, ros-melodic-cv-bridge, ros-melodic-geometric-shapes, ros-melodic-geometry-msgs, ros-melodic-kdl-parser, ros-melodic-moveit-msgs, ros-melodic-nav-msgs, ros-melodic-orocos-kdl, ros-melodic-pluginlib, ros-melodic-robot-calibration-msgs, ros-melodic-rosbag, ros-melodic-roscpp, ros-melodic-sensor-msgs, ros-melodic-std-msgs, ros-melodic-tf, ros-melodic-tf2-geometry-msgs, ros-melodic-tf2-ros, ros-melodic-visualization-msgs
+Homepage: http://ros.org/wiki/robot_calibration
+Standards-Version: 3.9.2
+
+Package: ros-melodic-robot-calibration
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}, libceres-dev, libgflags-dev, libprotobuf-dev, libprotoc-dev, libsuitesparse-dev, protobuf-compiler, ros-melodic-actionlib, ros-melodic-camera-calibration-parsers, ros-melodic-control-msgs, ros-melodic-cv-bridge, ros-melodic-geometric-shapes, ros-melodic-geometry-msgs, ros-melodic-kdl-parser, ros-melodic-moveit-msgs, ros-melodic-nav-msgs, ros-melodic-orocos-kdl, ros-melodic-pluginlib, ros-melodic-robot-calibration-msgs, ros-melodic-rosbag, ros-melodic-roscpp, ros-melodic-sensor-msgs, ros-melodic-std-msgs, ros-melodic-tf, ros-melodic-tf2-geometry-msgs, ros-melodic-tf2-ros, ros-melodic-visualization-msgs
+Description: Calibrate a Robot
